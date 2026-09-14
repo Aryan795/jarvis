@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Brain state — SQLite is the single source of truth and is never committed
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Models, pulled at deploy time, never vendored
+models/
+*.onnx
+*.tflite
+
+# Generated audio and generated command tables
+satellite/clips/*.flac
+satellite/clips/*.wav
+satellite/commands/generated/
+
+# ESPHome
+.esphome/
+secrets.yaml
+
+# Secrets
+.env
+
+# macOS
+.DS_Store

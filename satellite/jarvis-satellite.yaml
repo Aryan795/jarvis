@@ -1,0 +1,179 @@
+# Jarvis satellite — Stage A firmware.
+#
+# Stock ESPHome, no custom C++: micro_wake_word, voice_assistant, and the speaker media
+# player with embedded clips. It works on day one and everything after the wake word
+# streams to Home Assistant. Stage B adds the MultiNet component (see components/multinet)
+# and does not block this.
+#
+# Board: ESP32-S3-DevKitC-1 N16R8. The R8 is not optional — MultiNet7 alone wants close to
+# 3 MB of PSRAM and the audio front end another 0.7 MB. 16 MB of flash is for two OTA app
+# slots, esp-sr's model partition, and the clip bank; 8 MB does not fit all three.
+#
+# This is a sketch to show the shape, not a verified build. Check every key against the
+# ESPHome release you compile with.
+
+substitutions:
+  name: jarvis-satellite
+  friendly_name: Jarvis Satellite
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+  # Stage B appends the esp-sr model partition here, a few MB, reserve 4 MB.
+  # partitions:
+  #   - ["model", "data", "spiffs", 0x..., 4M]
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+api:
+  encryption:
+    key: !secret api_encryption_key
+ota:
+  - platform: esphome
+    password: !secret ota_password
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Setup"
+
+# --- Audio -------------------------------------------------------------------
+# Pin choice on the R8 modules: GPIO35/36/37 belong to the octal PSRAM and are unusable,
+# GPIO26-32 are flash, GPIO19/20 are USB, and GPIO0/3/45/46 are strapping pins.
+
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO4
+    i2s_bclk_pin: GPIO5
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO16
+    i2s_bclk_pin: GPIO15
+
+microphone:
+  - platform: i2s_audio
+    id: mic
+    i2s_audio_id: i2s_in
+    i2s_din_pin: GPIO6
+    adc_type: external
+    sample_rate: 16000
+    bits_per_sample: 32bit
+    channel: left
+
+speaker:
+  - platform: i2s_audio
+    id: spk
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO17
+    dac_type: external
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: mono
+
+media_player:
+  - platform: speaker
+    id: player
+    announcement_pipeline:
+      speaker: spk
+      format: FLAC
+      sample_rate: 16000
+      num_channels: 1
+    # Rendered by clips/render_clips.py at build time with the same Piper voice the server
+    # uses, so a clip and a live response are indistinguishable. Keep each under ~1.5 s:
+    # the wake word detector is gated during playback and there is no echo cancellation on
+    # this board, so there is nothing to interrupt.
+    files:
+      - id: clip_chime
+        file: clips/chime.flac
+      - id: clip_brain_down
+        file: clips/brain_unreachable.flac
+      - id: clip_hub_down
+        file: clips/hub_unreachable.flac
+      - id: clip_not_caught
+        file: clips/not_caught.flac
+
+# --- Privacy -----------------------------------------------------------------
+# A physical mic mute. It costs nothing and it is the feature people actually want on a
+# device that listens.
+
+binary_sensor:
+  - platform: gpio
+    id: mic_mute
+    name: "Microphone mute"
+    pin:
+      number: GPIO7
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    on_press:
+      - micro_wake_word.stop:
+      - voice_assistant.stop:
+    on_release:
+      - micro_wake_word.start:
+
+# --- Wake word ---------------------------------------------------------------
+
+micro_wake_word:
+  id: mww
+  microphone: mic
+  models:
+    - model: hey_jarvis
+  # Enable the official VAD model here to cut false accepts from non-speech sounds.
+  # vad:
+  on_wake_word_detected:
+    - media_player.speaker.play_on_device_media_file:
+        media_file: clip_chime
+        announcement: true
+    # Both paths start here, together. Sequential would mean buffering the utterance and
+    # replaying it, which ESPHome does not support and which would cost a repeat on every
+    # MultiNet miss. Parallel costs 32 KB/s on the LAN for a few seconds.
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+    # Stage B: start the MultiNet listener here as well.
+
+# --- Streaming path ----------------------------------------------------------
+# 16 kHz 16-bit mono PCM over the native API to HA on the Pi. The Pi relays and
+# orchestrates; no model runs on it. The satellite never talks to the i5 directly.
+
+voice_assistant:
+  id: va
+  microphone: mic
+  media_player: player
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+  on_error:
+    # Branch on `code`: connection and timeout codes play clip_brain_down,
+    # stt-no-text-recognized plays clip_not_caught. Silence is never a valid outcome.
+    - media_player.speaker.play_on_device_media_file:
+        media_file: clip_brain_down
+        announcement: true
+  on_client_disconnected:
+    - media_player.speaker.play_on_device_media_file:
+        media_file: clip_hub_down
+        announcement: true
+
+# --- Audit -------------------------------------------------------------------
+# Stage B emits one event per on-device decision. The brain is already subscribed to HA's
+# event stream and logs it as a turn, which is what keeps the audit log whole once most
+# turns stop reaching the brain (review 2.4).
+
+event:
+  - platform: template
+    id: satellite_decision
+    name: "Satellite decision"
+    device_class: button
+    event_types:
+      - satellite_hit
+      - satellite_miss
+      - satellite_shadow

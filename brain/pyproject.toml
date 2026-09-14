@@ -1,0 +1,30 @@
+[project]
+name = "jarvis-brain"
+version = "0.1.0"
+description = "Offline, correctness-first conversation agent for Home Assistant"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "aiohttp>=3.9",           # Home Assistant WebSocket + REST
+    "hassil>=2.0",            # tier 0 matcher, run in-process (review 2.1)
+    "home-assistant-intents",  # sentence templates for hassil
+    "wyoming>=1.5",           # STT/TTS protocol, server and client (review 2.2)
+    "onnxruntime>=1.18",      # bge-small retriever + DistilBERT classifier, CPU
+    "tokenizers>=0.19",
+    "sqlite-vec>=0.1",        # vector search inside the one SQLite file
+    "numpy>=1.26",
+    "scikit-learn>=1.5",      # isotonic calibration for the retriever
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.5"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

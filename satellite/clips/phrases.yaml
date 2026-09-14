@@ -1,0 +1,25 @@
+# The clip bank. Rendered to FLAC at build time by render_clips.py and embedded in flash.
+#
+# Same Piper voice as the server, so a clip and a live response are indistinguishable.
+# 16 kHz mono 16-bit FLAC, about 25 KB per 1.5 s clip; 100 clips is about 2.5 MB.
+#
+# Keep each under ~1.5 s. The wake word detector is gated during playback because the
+# INMP441 hears the speaker and there is no echo cancellation, so a long clip is a long
+# deaf spell.
+
+voice: en_US-lessac-medium
+
+clips:
+  # Feedback
+  chime: ""                      # a tone, not speech — rendered separately
+  not_caught: "I didn't catch that"
+
+  # Failure. Every failure branch ends in a clip; silence is never a valid outcome.
+  brain_unreachable: "brain unreachable"
+  hub_unreachable: "hub unreachable"
+
+  # Acknowledgements. Each one names the action, never just "done", so a wrong polarity is
+  # audible immediately. One per entry in commands.yaml.
+  bedroom_light_on: "bedroom light on"
+  bedroom_light_off: "bedroom light off"
+  undone: "undone"

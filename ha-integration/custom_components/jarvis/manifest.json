@@ -1,0 +1,11 @@
+{
+  "domain": "jarvis",
+  "name": "Jarvis",
+  "codeowners": ["@Aryan795"],
+  "config_flow": true,
+  "documentation": "https://github.com/Aryan795/jarvis",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "requirements": [],
+  "version": "0.1.0"
+}

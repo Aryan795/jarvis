@@ -1,0 +1,69 @@
+# The i5 LXC. CPU only, no storage mounts, no GPU.
+#
+# These are Docker images, not Home Assistant add-ons. Add-ons install on the Pi, which is
+# the one place none of this may run. HA reaches them through the Wyoming integration by
+# host and port.
+#
+# The servearr VM is the wrong home for this: it is sized tight and carries the iGPU
+# passthrough for Jellyfin. A separate unprivileged LXC is the right shape, since the
+# brain's one piece of state is a local SQLite file.
+#
+# Budget, roughly 2.5 GB RAM total:
+#   whisper ~1 GB · speech-to-phrase ~0.3 GB · piper ~0.2 GB · brain ~1 GB
+
+services:
+  whisper:
+    image: rhasspy/wyoming-whisper:latest
+    command: >
+      --model distil-small.en
+      --language en
+      --compute-type int8
+      --beam-size 1
+    # No --initial-prompt. distil models were distilled without previous-text conditioning,
+    # and a prompt over ~50 tokens pushes the average log-probability under faster-whisper's
+    # cutoff so output truncates or loops. Entity names run well past 50 tokens.
+    volumes:
+      - ./data/whisper:/data
+    ports:
+      - "10300:10300"
+    restart: unless-stopped
+
+  speech-to-phrase:
+    image: ghcr.io/ohf-voice/speech-to-phrase:latest
+    # A Kaldi decoder whose language model is built from the exposed entities, areas and
+    # Assist sentence templates. Answers "which of the phrases I know did you say", and its
+    # output names are guaranteed to be real HA names.
+    environment:
+      - HA_URL=${HA_URL}
+      - HA_TOKEN=${HA_TOKEN}
+    volumes:
+      - ./data/speech-to-phrase:/data
+    ports:
+      - "10301:10300"
+    restart: unless-stopped
+
+  piper:
+    image: rhasspy/wyoming-piper:latest
+    command: --voice en_US-lessac-medium
+    # The same voice render_clips.py uses, so a clip and a live response match.
+    volumes:
+      - ./data/piper:/data
+    ports:
+      - "10200:10200"
+    restart: unless-stopped
+
+  brain:
+    build:
+      context: ../brain
+    environment:
+      - JARVIS_HA_URL=${HA_URL}
+      - JARVIS_HA_TOKEN=${HA_TOKEN}
+      - JARVIS_WHISPER_URI=tcp://whisper:10300
+      - JARVIS_GRAMMAR_URI=tcp://speech-to-phrase:10300
+    volumes:
+      - ./data/brain:/data
+    ports:
+      - "8099:8099"   # conversation API, called by the Pi
+      - "10302:10302" # Wyoming STT, the pipeline's single STT engine
+    depends_on: [whisper, speech-to-phrase, piper]
+    restart: unless-stopped

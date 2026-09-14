@@ -1,0 +1,47 @@
+# The MultiNet command table — the source file a human edits.
+#
+# generate_table.py turns this into esp-sr's phoneme table and refuses to emit anything
+# that breaks the rules below. Correctness on this path is enforced at build time, because
+# there is no guard chain on the board.
+#
+#   1. Tier A entities only. Locks, gates, the alarm and heaters cannot appear here by
+#      construction — the generator checks each entity against HA's exposed-entity list
+#      with tier labels and exits non-zero on a tier B or C entity.
+#   2. Absolute states only, never toggles. The two paths overlap for a few hundred
+#      milliseconds, so if both ever fire the second call must be a no-op. "Bedroom light
+#      off" twice is still off. "Toggle" twice is a bug.
+#   3. Polarity is part of the command id. There is no retrieval step here, so the v1
+#      defect cannot recur — what can recur is acoustic confusion between "on" and "off",
+#      which is what the threshold, the margin, the shadow phase and the spoken
+#      acknowledgement are for.
+#   4. Start at about fifty commands from the audit log's most frequent, not two hundred.
+#      MultiNet's ceiling is 200, but accuracy falls as the table fills with confusable
+#      entries. Grow it from the data.
+#
+# Every entry needs an `ack` clip, because an acknowledgement that does not name the action
+# cannot catch a wrong polarity.
+
+thresholds:
+  # Placeholders. Fitted from the shadow phase, not guessed.
+  min_probability: 0.90
+  min_margin: 0.15   # top-1 must lead top-2 by this much
+
+commands:
+  - id: bedroom_light_on
+    phrase: "bedroom light on"
+    entity: light.bedroom
+    action: light.turn_on
+    ack: bedroom_light_on
+
+  - id: bedroom_light_off
+    phrase: "bedroom light off"
+    entity: light.bedroom
+    action: light.turn_off
+    ack: bedroom_light_off
+
+  - id: undo_last
+    phrase: "undo"
+    action: __undo__
+    ack: undone
+    # Reverses the satellite's last action. This is the recovery path for a false accept,
+    # which is why it is a command rather than something you have to go and fix by hand.
