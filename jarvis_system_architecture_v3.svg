@@ -1,0 +1,207 @@
+<svg width="870" height="1490" viewBox="0 0 870 1490" role="img" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<title>Jarvis v3 system architecture</title>
+<desc>ESP32-S3 satellite with on-device wake word and MultiNet fast path, Home Assistant on a Pi 4 as relay and orchestrator, and a CPU-only brain on the i5 with a two-decoder STT service, a hassil/retriever race, a three-gate guard chain, SQLite memory, and predict-only learning.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="870" height="1490" fill="rgb(250,250,247)"/>
+<text x="30" y="14" text-anchor="start" font-size="12" fill="rgb(110,108,100)">Jarvis · system architecture after the 13 Sep 2026 review</text>
+<text x="840" y="14" text-anchor="end" font-size="11" fill="rgb(110,108,100)">supersedes jarvis_system_architecture.svg · Apr 2026</text>
+<rect x="30" y="44" width="300" height="596" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="37" font-size="12" font-weight="500" fill="rgb(110,108,100)">ESP32-S3 satellite · ESPHome on ESP-IDF</text>
+<rect x="350" y="44" width="220" height="596" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="360" y="37" font-size="12" font-weight="500" fill="rgb(110,108,100)">Home Assistant · HAOS Pi 4 · relay</text>
+<rect x="590" y="44" width="250" height="596" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="600" y="37" font-size="12" font-weight="500" fill="rgb(110,108,100)">Jarvis brain · i5 LXC · CPU only</text>
+<rect x="56" y="64" width="250" height="48" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="81.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">I2S mic + amp</text>
+<text x="181.0" y="94.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">INMP441 · MAX98357A · 16 kHz 16-bit mono</text>
+<rect x="56" y="128" width="250" height="48" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="145.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">Wake word · micro_wake_word</text>
+<text x="181.0" y="158.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">hey_jarvis + VAD · always on · plays chime</text>
+<rect x="56" y="214" width="250" height="76" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="1.5"/>
+<text x="181.0" y="232.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">MultiNet fast path</text>
+<text x="181.0" y="245.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">esp-sr mn7_en · ~50 tier-A commands</text>
+<text x="181.0" y="258.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">absolute states only · shadow phase first</text>
+<text x="181.0" y="271.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">&lt; 500 ms · needs HA, not the i5</text>
+<rect x="56" y="306" width="250" height="62" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="324.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">Stream to HA</text>
+<text x="181.0" y="337.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">voice_assistant · PCM 16 kHz · native API</text>
+<text x="181.0" y="350.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">starts with MultiNet · cancelled on a hit</text>
+<rect x="56" y="384" width="250" height="48" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="401.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">Clip bank in flash</text>
+<text x="181.0" y="414.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">Piper renders · FLAC · acks, errors, chime</text>
+<rect x="56" y="448" width="250" height="48" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="465.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">satellite_hit event</text>
+<text x="181.0" y="478.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">cmd · p1 · p2 → HA → audit log</text>
+<rect x="56" y="512" width="250" height="48" rx="8" fill="rgb(8,80,65)" stroke="rgb(93,202,165)" stroke-width="0.5"/>
+<text x="181.0" y="529.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(159,225,203)">Speaker · announcement pipeline</text>
+<text x="181.0" y="542.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(93,202,165)">no barge-in · mic gated while playing</text>
+<rect x="56" y="576" width="250" height="48" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="181.0" y="593.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Physical fallback</text>
+<text x="181.0" y="606.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">mic-mute GPIO · wall rockers if HA is down</text>
+<rect x="360" y="64" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="81.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">Exposed entities + areas</text>
+<text x="460.0" y="94.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">the only vocabulary, hassil too</text>
+<rect x="360" y="128" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="145.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">Wyoming integration</text>
+<text x="460.0" y="158.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">STT + TTS by host:port on the i5</text>
+<rect x="360" y="228" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="245.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">Native API action</text>
+<text x="460.0" y="258.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">satellite → HA service · tier A only</text>
+<rect x="360" y="306" width="200" height="62" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="324.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">Assist pipeline</text>
+<text x="460.0" y="337.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">VAD · one STT · one agent · one TTS</text>
+<text x="460.0" y="350.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">prefer-local OFF · else tier C bypass</text>
+<rect x="360" y="384" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="401.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">Jarvis conversation entity</text>
+<text x="460.0" y="414.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">text · device_id · satellite_id</text>
+<rect x="360" y="448" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="465.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">WebSocket API</text>
+<text x="460.0" y="478.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">call_service · verify · state events</text>
+<rect x="360" y="512" width="200" height="48" rx="8" fill="rgb(60,52,137)" stroke="rgb(175,169,236)" stroke-width="0.5"/>
+<text x="460.0" y="529.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(210,206,246)">TTS cache</text>
+<text x="460.0" y="542.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(175,169,236)">by text · URL streamed to satellite</text>
+<rect x="360" y="576" width="200" height="48" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="460.0" y="593.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Nothing heavy runs here</text>
+<text x="460.0" y="606.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">2 GB · 79 automations · 32 KB/s relay</text>
+<rect x="600" y="64" width="230" height="62" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="715.0" y="82.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Placement</text>
+<text x="715.0" y="95.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">Whisper · S2P · Piper · embeddings · NLU</text>
+<text x="715.0" y="108.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">all on the i5 LXC, never on the Pi</text>
+<rect x="600" y="142" width="230" height="48" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="715.0" y="159.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(175,215,250)">Audit subscriber</text>
+<text x="715.0" y="172.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(110,175,235)">state_changed + satellite_hit → log</text>
+<rect x="600" y="206" width="230" height="48" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="715.0" y="223.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(175,215,250)">Registry sync</text>
+<text x="715.0" y="236.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(110,175,235)">exposed names → hassil slots + S2P grammar</text>
+<rect x="600" y="306" width="230" height="110" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="715.0" y="322" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(175,215,250)">STT service · Wyoming endpoint</text>
+<rect x="600" y="334" width="110" height="44" rx="6" fill="rgb(20,90,160)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="655.0" y="345.0" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="rgb(175,215,250)">Speech-to-Phrase</text>
+<text x="655.0" y="356.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="400" fill="rgb(110,175,235)">grammar-constrained</text>
+<text x="655.0" y="367.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="400" fill="rgb(110,175,235)">tens of ms · measure</text>
+<rect x="720" y="334" width="110" height="44" rx="6" fill="rgb(20,90,160)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="775.0" y="345.0" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="rgb(175,215,250)">distil-whisper</text>
+<text x="775.0" y="356.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="400" fill="rgb(110,175,235)">small.en · no prompt</text>
+<text x="775.0" y="367.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="400" fill="rgb(110,175,235)">0.9–1.4 s</text>
+<text x="715.0" y="398" text-anchor="middle" dominant-baseline="central" font-size="10" fill="rgb(110,175,235)">B/C need both to agree · audio hash kept</text>
+<rect x="600" y="448" width="230" height="62" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="715.0" y="466.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(175,215,250)">Cascade + context injector</text>
+<text x="715.0" y="479.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(110,175,235)">FastAPI + asyncio · area from satellite_id</text>
+<text x="715.0" y="492.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(110,175,235)">text in → guard chain below → speech out</text>
+<rect x="600" y="512" width="110" height="48" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="655.0" y="523.0" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="rgb(175,215,250)">Piper TTS</text>
+<text x="655.0" y="536.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" fill="rgb(110,175,235)">Wyoming · one voice</text>
+<text x="655.0" y="549.0" text-anchor="middle" dominant-baseline="central" font-size="9.5" fill="rgb(110,175,235)">shared with the clips</text>
+<path d="M181 112 L181 128" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M181 176 L181 192" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+<circle cx="181" cy="192" r="3" fill="rgba(0,0,0,0.5)"/>
+<path d="M181 192 L181 214" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M181 192 L44 192 L44 337 L56 337" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="36" y="268" transform="rotate(-90 36 268)" text-anchor="middle" font-size="9" fill="rgb(110,108,100)">both start on wake</text>
+<path d="M306 252 L360 252" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="333" y="245" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">tier A</text>
+<path d="M306 337 L360 337" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="333" y="330" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">audio</text>
+<path d="M560 337 L600 337" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="580" y="330" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">audio</text>
+<path d="M600 408 L560 408" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="580" y="402" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">text</text>
+<path d="M560 426 L600 470" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M600 536 L560 536" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="580" y="529" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">speech</text>
+<path d="M360 536 L306 536" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="333" y="529" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">URL</text>
+<path d="M770 510 L770 648 L165 648" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+<path d="M165 648 L165 702" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M435 648 L435 702" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="762" y="596" text-anchor="end" font-size="9" fill="rgb(110,108,100)">turn enters the race</text>
+<rect x="30" y="674" width="810" height="330" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="667" font-size="12" font-weight="500" fill="rgb(110,108,100)">Decision — hassil ‖ retriever race, then the guard chain · nothing fires without passing all three gates</text>
+<rect x="40" y="702" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="165.0" y="723.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Tier 0 · hassil, in-process</text>
+<text x="165.0" y="736.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">match or nothing · per-bucket prior</text>
+<rect x="310" y="702" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="435.0" y="723.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Tier 1 · semantic retriever</text>
+<text x="435.0" y="736.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">sqlite-vec + bge-small · candidates only</text>
+<rect x="580" y="702" width="250" height="56" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="705.0" y="723.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Tier 2 · local NLU</text>
+<text x="705.0" y="736.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">DistilBERT intent + slots · on a miss</text>
+<rect x="40" y="786" width="250" height="62" rx="8" fill="rgb(99,56,6)" stroke="rgb(239,159,39)" stroke-width="0.5"/>
+<text x="165.0" y="804.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,199,117)">1 · Calibration</text>
+<text x="165.0" y="817.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">score → P(correct) · fit from audit log</text>
+<text x="165.0" y="830.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">no guessed constants</text>
+<rect x="310" y="786" width="250" height="62" rx="8" fill="rgb(99,56,6)" stroke="rgb(239,159,39)" stroke-width="0.5"/>
+<text x="435.0" y="804.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,199,117)">2 · Polarity + quantity guard</text>
+<text x="435.0" y="817.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">verbs · negation · numbers · RAW text</text>
+<text x="435.0" y="830.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">mismatch kills the candidate</text>
+<rect x="580" y="786" width="250" height="62" rx="8" fill="rgb(99,56,6)" stroke="rgb(239,159,39)" stroke-width="0.5"/>
+<text x="705.0" y="804.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,199,117)">3 · Risk gate</text>
+<text x="705.0" y="817.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">A ≥ 0.80 fire · B ≥ 0.92 announce first</text>
+<text x="705.0" y="830.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(239,159,39)">C · confirmation turn, always</text>
+<rect x="40" y="882" width="380" height="56" rx="8" fill="rgb(12,68,124)" stroke="rgb(110,175,235)" stroke-width="0.5"/>
+<text x="230.0" y="903.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(175,215,250)">Execution engine</text>
+<text x="230.0" y="916.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(110,175,235)">HA WebSocket · call_service · verify state · log the turn</text>
+<rect x="440" y="882" width="390" height="56" rx="8" fill="rgb(113,43,19)" stroke="rgb(240,150,110)" stroke-width="0.5"/>
+<text x="635.0" y="903.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,195,170)">Tier 3 · Clarify</text>
+<text x="635.0" y="916.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(240,150,110)">ask, never guess · continue_conversation reopens the mic</text>
+<path d="M165 758 L165 786" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M435 758 L165 786" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M705 758 L435 786" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="640" y="776" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">re-enters at gate 2</text>
+<path d="M290 817 L310 817" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M560 817 L580 817" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M705 848 L230 882" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="440" y="868" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">pass</text>
+<path d="M705 848 L635 882" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="690" y="872" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">unsure</text>
+<text x="830" y="976" text-anchor="end" font-size="10.5" fill="rgb(110,108,100)">Rejection at any gate drops to tier 2, whose output re-enters at gate 2.</text>
+<text x="830" y="991" text-anchor="end" font-size="10.5" fill="rgb(110,108,100)">HA's built-in agent and sentence triggers stay off: the brain is the only agent.</text>
+<rect x="30" y="1024" width="810" height="190" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="1017" font-size="12" font-weight="500" fill="rgb(110,108,100)">Memory — SQLite + sqlite-vec · one file, single truth</text>
+<rect x="40" y="1052" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="165.0" y="1073.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Commands + vectors</text>
+<text x="165.0" y="1086.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">confidence · episodes · index rebuildable</text>
+<rect x="310" y="1052" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="435.0" y="1073.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Audit log</text>
+<text x="435.0" y="1086.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">every turn, satellite hits included</text>
+<rect x="580" y="1052" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="705.0" y="1073.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Replay harness</text>
+<text x="705.0" y="1086.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">zero regressions before any deploy</text>
+<rect x="40" y="1132" width="250" height="56" rx="8" fill="rgb(114,36,62)" stroke="rgb(235,140,175)" stroke-width="0.5"/>
+<text x="165.0" y="1153.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,195,215)">Shadow gate</text>
+<text x="165.0" y="1166.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(235,140,175)">predict-only until N confirms · MultiNet too</text>
+<rect x="310" y="1132" width="250" height="56" rx="8" fill="rgb(39,80,10)" stroke="rgb(150,210,95)" stroke-width="0.5"/>
+<text x="435.0" y="1153.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(195,235,150)">Calibration fits</text>
+<text x="435.0" y="1166.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(150,210,95)">per matcher, from shadow data</text>
+<rect x="580" y="1132" width="250" height="56" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="705.0" y="1153.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Dedup rule</text>
+<text x="705.0" y="1166.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">identical intent · polarity · entity · slot</text>
+<path d="M300 938 L400 1052" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<text x="270" y="975" text-anchor="middle" font-size="10" fill="rgb(110,108,100)">log every turn</text>
+<rect x="30" y="1234" width="810" height="106" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="1227" font-size="12" font-weight="500" fill="rgb(110,108,100)">Learning — built last · everything starts predict-only</text>
+<rect x="40" y="1262" width="250" height="56" rx="8" fill="rgb(114,36,62)" stroke="rgb(235,140,175)" stroke-width="0.5"/>
+<text x="165.0" y="1283.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,195,215)">Habit detector</text>
+<text x="165.0" y="1296.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(235,140,175)">time + sequence patterns → shadow first</text>
+<rect x="310" y="1262" width="250" height="56" rx="8" fill="rgb(114,36,62)" stroke="rgb(235,140,175)" stroke-width="0.5"/>
+<text x="435.0" y="1283.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,195,215)">Correction classifier</text>
+<text x="435.0" y="1296.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(235,140,175)">“no, actually…” → confidence update</text>
+<rect x="580" y="1262" width="250" height="56" rx="8" fill="rgb(114,36,62)" stroke="rgb(235,140,175)" stroke-width="0.5"/>
+<text x="705.0" y="1283.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(250,195,215)">Proactive engine</text>
+<text x="705.0" y="1296.5" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(235,140,175)">suggests automations · never creates silently</text>
+<rect x="30" y="1360" width="810" height="106" rx="12" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="1353" font-size="12" font-weight="500" fill="rgb(110,108,100)">Failure behaviour — silence is never an outcome</text>
+<rect x="40" y="1382" width="250" height="62" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="165.0" y="1400.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">i5 down</text>
+<text x="165.0" y="1413.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">fast path still works, via HA</text>
+<text x="165.0" y="1426.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">otherwise ‘brain unreachable’ clip</text>
+<rect x="310" y="1382" width="250" height="62" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="435.0" y="1400.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">Pi 4 or Wi-Fi down</text>
+<text x="435.0" y="1413.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">wake works · the action call fails</text>
+<text x="435.0" y="1426.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">‘hub unreachable’ clip · use the rockers</text>
+<rect x="580" y="1382" width="250" height="62" rx="8" fill="rgb(68,68,65)" stroke="rgb(170,168,160)" stroke-width="0.5"/>
+<text x="705.0" y="1400.0" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="rgb(215,213,205)">MultiNet false accept</text>
+<text x="705.0" y="1413.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">the acknowledgement names the action</text>
+<text x="705.0" y="1426.0" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="rgb(170,168,160)">‘hey jarvis, undo’ · pair logged for review</text>
+<text x="30" y="1480" text-anchor="start" font-size="10.5" fill="rgb(110,108,100)">13 Sep 2026 · voice/ARCHITECTURE_REVIEW.md · v1 defect removed: dispatch on FAISS &gt; 0.85 · embeddings retrieve, deterministic code decides</text>
+</svg>
